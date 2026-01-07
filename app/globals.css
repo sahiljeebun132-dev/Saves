@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Professional Button Styles */
+.professional-btn-primary {
+  @apply bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-300;
+}
+
+.professional-btn-secondary {
+  @apply bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-red-300;
+}
+
+.professional-btn-gray {
+  @apply bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-gray-300;
+}
+
+.professional-btn-danger {
+  @apply bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-red-300;
+}
+
+.professional-card {
+  @apply bg-white bg-opacity-95 backdrop-blur-sm rounded-xl p-6 shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 border border-gray-200 hover:border-blue-300 text-gray-800;
+}
+
+/* Form Styles */
+.professional-form {
+  @apply bg-white shadow-2xl rounded-xl p-8 border border-gray-100;
+}
+
+.professional-input {
+  @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200;
+}
+
+.professional-label {
+  @apply block text-sm font-medium text-gray-700 mb-2;
+}
+
+/* Table Styles */
+.professional-table {
+  @apply min-w-full bg-white shadow-lg rounded-lg overflow-hidden;
+}
+
+.professional-table th {
+  @apply px-6 py-4 bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider;
+}
+
+.professional-table td {
+  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-t border-gray-200;
+}
+
+/* Dashboard Cards */
+.dashboard-card {
+  @apply bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500;
+}
+
+.dashboard-card h3 {
+  @apply text-lg font-semibold text-gray-800 mb-2;
+}
+
+.dashboard-card p {
+  @apply text-gray-600;
+}

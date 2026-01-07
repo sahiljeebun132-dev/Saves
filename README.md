@@ -1,0 +1,69 @@
+# Doctor Direct
+
+A Next.js web application for online doctor appointment booking.
+
+## Features
+
+- Book appointments with doctors
+- View closest doctors first based on location
+- Estimated appointment wait times
+- Mandatory registration forms for patients and doctors
+- Responsive design with Tailwind CSS
+
+## Getting Started
+
+First, ensure Node.js is installed. Then install dependencies:
+
+```bash
+npm install
+```
+
+Then, run the development server:
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+## Project Structure
+
+- `app/` - Next.js app directory with pages
+- `app/page.tsx` - Home page
+- `app/book/page.tsx` - Doctor listing and booking page
+- `app/book/[id]/page.tsx` - Individual doctor booking form
+- `app/register/patient/page.tsx` - Patient registration
+- `app/register/doctor/page.tsx` - Doctor registration
+
+## Slack Notifications
+
+The application integrates with Slack to send notifications for new appointment bookings and emergency calls.
+
+### Setup Instructions
+
+1. Create a new Slack app at [https://api.slack.com/apps](https://api.slack.com/apps).
+
+2. Add the following bot token scopes:
+   - `chat:write` (to send messages)
+   - `channels:read` (if needed)
+   - `im:read` (for DMs, if receiving messages)
+
+3. Install the app to your workspace and get the Bot User OAuth Token.
+
+4. Get the Channel ID for the channel where you want to send notifications (e.g., #general). You can get it by right-clicking the channel in Slack and selecting "Copy link", the ID is the last part.
+
+5. For receiving messages (optional), enable Event Subscriptions:
+   - Subscribe to bot events: `message.channels`, `message.im`, etc.
+   - Set the Request URL to your deployed app's `/api/slack/webhook` (e.g., `https://yourdomain.com/api/slack/webhook`)
+   - Get the Signing Secret from the app settings.
+
+6. Update the `.env` file with your Slack credentials:
+   ```
+   SLACK_BOT_TOKEN=xoxb-your-bot-token
+   SLACK_CHANNEL_ID=C1234567890
+   SLACK_SIGNING_SECRET=your-signing-secret  # For webhook verification
+   ```
+
+7. Redeploy the application or restart the local server.
+
+When a patient books an appointment or calls for emergency, a Slack message will be sent to the specified channel.

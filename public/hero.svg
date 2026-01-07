@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="800" viewBox="0 0 1200 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="160" y1="80" x2="1040" y2="720" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EAF2FF"/>
+      <stop offset="1" stop-color="#DDEBFF"/>
+    </linearGradient>
+    <linearGradient id="card" x1="240" y1="170" x2="960" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.96"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.90"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="430" y1="250" x2="820" y2="560" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <filter id="softShadow" x="180" y="120" width="840" height="580" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feOffset dy="20"/>
+      <feGaussianBlur stdDeviation="24"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.08  0 0 0 0 0.12  0 0 0 0 0.20  0 0 0 0.18 0"/>
+      <feBlend mode="normal" in2="SourceGraphic" result="shape"/>
+    </filter>
+    <filter id="innerShadow" x="0" y="0" width="200%" height="200%" filterUnits="objectBoundingBox">
+      <feOffset dx="0" dy="2"/>
+      <feGaussianBlur stdDeviation="2"/>
+      <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.10  0 0 0 0 0.15  0 0 0 0 0.30  0 0 0 0.20 0"/>
+      <feBlend in2="SourceGraphic" mode="normal"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect x="0" y="0" width="1200" height="800" fill="url(#bg)"/>
+
+  <!-- Decorative blobs -->
+  <circle cx="220" cy="180" r="120" fill="#93C5FD" fill-opacity="0.22"/>
+  <circle cx="1020" cy="220" r="170" fill="#60A5FA" fill-opacity="0.18"/>
+  <circle cx="980" cy="650" r="120" fill="#1D4ED8" fill-opacity="0.10"/>
+
+  <!-- Card -->
+  <g filter="url(#softShadow)">
+    <rect x="220" y="150" width="760" height="500" rx="32" fill="url(#card)"/>
+  </g>
+
+  <!-- Medical cross badge -->
+  <g filter="url(#innerShadow)">
+    <rect x="290" y="220" width="140" height="140" rx="28" fill="url(#accent)"/>
+  </g>
+  <rect x="350" y="245" width="20" height="90" rx="10" fill="#FFFFFF"/>
+  <rect x="315" y="280" width="90" height="20" rx="10" fill="#FFFFFF"/>
+
+  <!-- Title lines (abstract) -->
+  <rect x="460" y="235" width="410" height="26" rx="13" fill="#0F172A" fill-opacity="0.88"/>
+  <rect x="460" y="275" width="360" height="16" rx="8" fill="#334155" fill-opacity="0.55"/>
+  <rect x="460" y="300" width="320" height="16" rx="8" fill="#334155" fill-opacity="0.45"/>
+
+  <!-- Doctor illustration (simple, friendly) -->
+  <!-- Head -->
+  <circle cx="790" cy="430" r="70" fill="#F8D3C1"/>
+  <!-- Hair -->
+  <path d="M726 420c5-50 39-80 87-80 41 0 78 26 84 67 2 16-2 30-8 40-6-18-20-30-40-33-18-3-29-12-36-22-10 20-30 35-55 35-15 0-25-3-32-7z" fill="#0F172A" fill-opacity="0.88"/>
+  <!-- Neck -->
+  <rect x="760" y="495" width="60" height="54" rx="20" fill="#F4C6B1"/>
+
+  <!-- Body / Coat -->
+  <path d="M640 720c0-98 68-176 152-176s152 78 152 176H640z" fill="#FFFFFF"/>
+  <path d="M710 548h164c16 0 29 13 29 29v143H681V577c0-16 13-29 29-29z" fill="#E2E8F0"/>
+  <path d="M740 548h104l-14 68h-76l-14-68z" fill="#FFFFFF"/>
+
+  <!-- Stethoscope -->
+  <path d="M720 570c0 44 28 78 72 78s72-34 72-78" stroke="#2563EB" stroke-width="10" stroke-linecap="round"/>
+  <path d="M864 570v36c0 30 24 54 54 54h12" stroke="#2563EB" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="942" cy="660" r="18" fill="#2563EB"/>
+  <circle cx="942" cy="660" r="10" fill="#93C5FD"/>
+
+  <!-- Call button (abstract) -->
+  <rect x="290" y="420" width="260" height="64" rx="16" fill="#DC2626"/>
+  <rect x="320" y="442" width="160" height="20" rx="10" fill="#FFFFFF" fill-opacity="0.95"/>
+  <circle cx="520" cy="452" r="10" fill="#FFFFFF" fill-opacity="0.95"/>
+
+  <!-- Small location line (abstract) -->
+  <circle cx="300" cy="520" r="8" fill="#16A34A"/>
+  <rect x="316" y="512" width="260" height="16" rx="8" fill="#16A34A" fill-opacity="0.25"/>
+
+  <!-- Rounded border hint -->
+  <rect x="220" y="150" width="760" height="500" rx="32" stroke="#CBD5E1" stroke-opacity="0.55"/>
+</svg>
