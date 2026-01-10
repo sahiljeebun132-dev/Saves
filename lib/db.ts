@@ -59,45 +59,6 @@ const defaultData: Data = {
       availableHours: "9 AM - 5 PM",
       location: { lat: -20.256, lng: 57.406 },
       password: "password123"
-    },
-    {
-      id: 2,
-      name: "Dr. Jane Doe",
-      email: "jane@example.com",
-      phone: "+230 234 5678",
-      licenseNumber: "LIC23456",
-      specialty: "Dermatology",
-      experience: 8,
-      clinicAddress: "Port Louis, Mauritius",
-      availableHours: "10 AM - 6 PM",
-      location: { lat: -20.165, lng: 57.501 },
-      password: "password123"
-    },
-    {
-      id: 3,
-      name: "Dr. Bob Johnson",
-      email: "bob@example.com",
-      phone: "+230 345 6789",
-      licenseNumber: "LIC34567",
-      specialty: "Pediatrics",
-      experience: 12,
-      clinicAddress: "Curepipe, Mauritius",
-      availableHours: "8 AM - 4 PM",
-      location: { lat: -20.348, lng: 57.552 },
-      password: "password123"
-    },
-    {
-      id: 4,
-      name: "Dr. Alice Brown",
-      email: "alice@example.com",
-      phone: "+230 456 7890",
-      licenseNumber: "LIC45678",
-      specialty: "Neurology",
-      experience: 15,
-      clinicAddress: "Quatre Bornes, Mauritius",
-      availableHours: "9 AM - 5 PM",
-      location: { lat: -20.244, lng: 57.478 },
-      password: "password123"
     }
   ],
   patients: [
