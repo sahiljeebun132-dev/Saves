@@ -21,6 +21,16 @@ export default function Home() {
   const [watchId, setWatchId] = useState<number | null>(null)
   const heroSrc = '/hero-ai.svg'
 
+  const normalizePhoneForTel = (raw: string) => {
+    const trimmed = String(raw || '').trim()
+    if (!trimmed) return ''
+
+    const hasLeadingPlus = trimmed.startsWith('+')
+    const digitsOnly = trimmed.replace(/[^0-9]/g, '')
+    if (!digitsOnly) return ''
+    return hasLeadingPlus ? `+${digitsOnly}` : digitsOnly
+  }
+
   useEffect(() => {
     if (!navigator.geolocation) {
       setLocationError('Geolocation is not supported by this browser.')
@@ -101,7 +111,7 @@ export default function Home() {
     setShowModal(false)
 
     try {
-      const payload = { ...currentLocation, name: callerName, phone: callerPhone }
+      const payload = { ...currentLocation, name: callerName, phone: callerPhone, mode: 'direct' }
       const response = await fetch('/api/call-doctor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -110,6 +120,12 @@ export default function Home() {
       if (!response.ok) throw new Error('Failed to call doctors')
       const data = await response.json()
       setNearestDoctors(data.doctors)
+
+      const primary = Array.isArray(data?.doctors) ? data.doctors[0] : null
+      const telPhone = primary?.phone ? normalizePhoneForTel(primary.phone) : ''
+      if (telPhone) {
+        window.location.href = `tel:${telPhone}`
+      }
     } catch (err) {
       setError('Failed to find doctors. Please try again.')
     } finally {
@@ -182,11 +198,18 @@ export default function Home() {
                   <p className="text-gray-600 mb-1">{doctor.clinicAddress}</p>
                   <p className="text-gray-600 mb-2">📞 {doctor.phone}</p>
                   <p className="text-sm text-gray-500">Distance: {doctor.distance.toFixed(1)} km</p>
+
+                  <a
+                    href={`tel:${normalizePhoneForTel(doctor.phone)}`}
+                    className="mt-4 inline-block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+                  >
+                    Call Now
+                  </a>
                 </div>
               ))}
             </div>
             <p className="text-center mt-8 text-gray-600">
-              Notifications have been sent to these doctors. Please wait for their response.
+              Select a doctor to call them directly.
             </p>
           </div>
         </div>

@@ -29,6 +29,8 @@ export async function POST(request: NextRequest) {
     const lng = Number(body?.lng)
     const name = body?.name
     const phone = body?.phone
+    const mode = body?.mode
+    const isDirectMode = mode === 'direct'
 
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
       return NextResponse.json({ error: 'Valid lat/lng location required' }, { status: 400 })
@@ -45,8 +47,8 @@ export async function POST(request: NextRequest) {
     // Get top 3 nearest doctors
     const nearestDoctors = doctorsWithDistance.slice(0, 3)
 
-    // Send Slack message (if Slack is configured).
-    if (slackClient && slackChannel) {
+    // Send Slack message (if Slack is configured and not in direct-call mode).
+    if (!isDirectMode && slackClient && slackChannel) {
       // Build caller info and map link
       const callerName = name && String(name).trim() ? String(name).trim() : 'Unknown'
       const callerPhone = phone && String(phone).trim() ? String(phone).trim() : 'Unknown'
