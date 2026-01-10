@@ -19,7 +19,7 @@ export default function Home() {
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [locationError, setLocationError] = useState<string | null>(null)
   const [watchId, setWatchId] = useState<number | null>(null)
-  const heroSrc = '/brain.jpg'
+  const heroSrc = '/hero-ai.svg'
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -125,11 +125,11 @@ export default function Home() {
       <section className="relative min-h-screen">
         <Image
           src={heroSrc}
-          alt="mydoctor.mu"
+          alt="MyDoctor.mu"
           fill
           priority
           className="object-cover"
-          unoptimized={false}
+          unoptimized
         />
 
         {/* Dark overlay for readability */}
@@ -140,7 +140,7 @@ export default function Home() {
           <div className="h-full max-w-6xl mx-auto px-6">
             <div className="h-full flex flex-col items-center justify-center text-center">
               <h1 className="text-5xl md:text-6xl font-extrabold text-white tracking-tight">
-                mydoctor.mu
+                MyDoctor.mu
               </h1>
 
               <p className="mt-4 text-base md:text-lg text-white/90 max-w-xl">
@@ -195,7 +195,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="bg-slate-900 text-white py-10 px-4">
         <div className="max-w-6xl mx-auto text-center">
-          <p>© 2025 mydoctor.mu. All rights reserved.</p>
+          <p>© 2025 MyDoctor.mu. All rights reserved.</p>
         </div>
       </footer>
       {/* Modal for caller info */}
