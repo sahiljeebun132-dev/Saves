@@ -125,7 +125,7 @@ export default function Home() {
       <section className="relative min-h-screen">
         <Image
           src={heroSrc}
-          alt="Doctor Direct"
+          alt="mydoctor.mu"
           fill
           priority
           className="object-cover"
@@ -140,7 +140,7 @@ export default function Home() {
           <div className="h-full max-w-6xl mx-auto px-6">
             <div className="h-full flex flex-col items-center justify-center text-center">
               <h1 className="text-5xl md:text-6xl font-extrabold text-white tracking-tight">
-                Doctor Direct
+                mydoctor.mu
               </h1>
 
               <p className="mt-4 text-base md:text-lg text-white/90 max-w-xl">
@@ -195,7 +195,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="bg-slate-900 text-white py-10 px-4">
         <div className="max-w-6xl mx-auto text-center">
-          <p>© 2025 Doctor Direct. All rights reserved.</p>
+          <p>© 2025 mydoctor.mu. All rights reserved.</p>
         </div>
       </footer>
       {/* Modal for caller info */}
