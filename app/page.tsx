@@ -64,59 +64,54 @@ export default function Home() {
   }, [])
 
   const handleCallDoctor = async () => {
-    setError(null)
-
-    if (!currentLocation && navigator.geolocation) {
-      try {
-        const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
-            timeout: 5000,
-            maximumAge: 0,
-          })
-        })
-        setCurrentLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-        setLocationError(null)
-      } catch {
-        setLocationError('Unable to get your location. Please enable location services.')
-      }
-    }
-
-    if (!currentLocation) {
-      setError('Location not available. Please enable location services.')
-      return
-    }
-
-    setShowModal(true)
-  }
-
-  const [showModal, setShowModal] = useState(false)
-  const [callerName, setCallerName] = useState('')
-  const [callerPhone, setCallerPhone] = useState('')
-
-  const submitCallForm = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!currentLocation) {
-      setError('Location not available.')
-      setShowModal(false)
-      return
-    }
-    if (!callerPhone.trim() || !callerName.trim()) {
-      setError('Please provide your name and phone number.')
-      return
-    }
-
-    setLoading(true)
-    setError(null)
-    setShowModal(false)
-
     try {
-      const payload = { ...currentLocation, name: callerName, phone: callerPhone, mode: 'direct' }
+      setLoading(true)
+      setError(null)
+
+      const getBestAvailableDoctorPhone = async () => {
+        const doctorsRes = await fetch('/api/doctors')
+        if (!doctorsRes.ok) return ''
+        const allDoctors = await doctorsRes.json()
+        const first = Array.isArray(allDoctors) ? allDoctors[0] : null
+        return first?.phone ? normalizePhoneForTel(String(first.phone)) : ''
+      }
+
+      let location = currentLocation
+
+      if (!location && navigator.geolocation) {
+        try {
+          const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              timeout: 5000,
+              maximumAge: 0,
+            })
+          })
+          location = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+          setCurrentLocation(location)
+          setLocationError(null)
+        } catch {
+          setLocationError('Unable to get your location. Please enable location services.')
+        }
+      }
+
+      if (!location) {
+        const telPhone = await getBestAvailableDoctorPhone()
+        if (telPhone) {
+          window.location.href = `tel:${telPhone}`
+          return
+        }
+        setError('Location not available. Please enable location services.')
+        return
+      }
+
+      const payload = { ...location, mode: 'direct' }
       const response = await fetch('/api/call-doctor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
+
       if (!response.ok) throw new Error('Failed to call doctors')
       const data = await response.json()
       setNearestDoctors(data.doctors)
@@ -125,13 +120,14 @@ export default function Home() {
       const telPhone = primary?.phone ? normalizePhoneForTel(primary.phone) : ''
       if (telPhone) {
         window.location.href = `tel:${telPhone}`
+        return
       }
-    } catch (err) {
-      setError('Failed to find doctors. Please try again.')
+
+      setError('No doctor phone number available to call.')
+    } catch {
+      setError('Failed to connect to a doctor. Please try again.')
     } finally {
       setLoading(false)
-      setCallerName('')
-      setCallerPhone('')
     }
   }
 
@@ -176,7 +172,7 @@ export default function Home() {
                 disabled={loading}
                 className="mt-6 bg-red-600 hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-lg transition duration-300 shadow-lg"
               >
-                {loading ? 'Finding Doctors...' : '🚨 Call a Doctor'}
+                {loading ? 'Calling Doctor...' : '🚨 Call a Doctor'}
               </button>
 
               {error && <p className="mt-4 text-red-200">{error}</p>}
@@ -221,42 +217,6 @@ export default function Home() {
           <p>© 2025 MyDoctor.mu. All rights reserved.</p>
         </div>
       </footer>
-      {/* Modal for caller info */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-semibold mb-4">Provide your details</h3>
-            <form onSubmit={submitCallForm}>
-              <label htmlFor="callerName" className="block text-sm font-medium text-gray-700">Name</label>
-              <input
-                id="callerName"
-                name="callerName"
-                value={callerName}
-                onChange={(e) => setCallerName(e.target.value)}
-                className="mt-1 mb-3 block w-full rounded-md border-gray-300 shadow-sm"
-                placeholder="Your name"
-                required
-              />
-
-              <label htmlFor="callerPhone" className="block text-sm font-medium text-gray-700">Phone (with country code)</label>
-              <input
-                id="callerPhone"
-                name="callerPhone"
-                value={callerPhone}
-                onChange={(e) => setCallerPhone(e.target.value)}
-                className="mt-1 mb-4 block w-full rounded-md border-gray-300 shadow-sm"
-                placeholder="+1234567890"
-                required
-              />
-
-              <div className="flex justify-end gap-3">
-                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 rounded bg-gray-200">Cancel</button>
-                <button type="submit" className="px-4 py-2 rounded bg-red-600 text-white">Send Emergency</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </main>
   )
 }
