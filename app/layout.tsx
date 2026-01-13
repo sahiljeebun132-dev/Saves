@@ -5,8 +5,11 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'MyDoctor.mu',
-  description: 'Book appointments with doctors online',
+  title: {
+    default: 'my doctor.mu',
+    template: '%s | my doctor.mu',
+  },
+  description: 'One Tap, One Doc: Heathcare at Your Fingertips',
 }
 
 export default function RootLayout({

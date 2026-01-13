@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import EmergencyCrossButton from './components/EmergencyCrossButton'
 
 interface Doctor {
   id: number
@@ -17,6 +18,8 @@ export default function Home() {
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [locationError, setLocationError] = useState<string | null>(null)
   const [watchId, setWatchId] = useState<number | null>(null)
+
+  const currentYear = new Date().getFullYear()
 
   const normalizePhoneForTel = (raw: string) => {
     const trimmed = String(raw || '').trim()
@@ -131,12 +134,8 @@ export default function Home() {
     <main className="min-h-screen bg-gradient-to-br from-lime-50 to-yellow-50">
       <section className="min-h-[85vh] flex items-center justify-center px-6">
         <div className="w-full max-w-3xl text-center">
-          <div className="mx-auto mb-6 h-16 w-16 rounded-2xl bg-emerald-600 shadow-lg flex items-center justify-center text-white text-3xl">
-            ✚
-          </div>
-
-          <h1 className="text-5xl md:text-6xl font-extrabold text-slate-900 tracking-tight">
-            MyDoctor.mu
+          <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
+            One Tap, One Doc: Heathcare at Your Fingertips
           </h1>
 
           <p className="mt-4 text-base md:text-lg text-slate-700 max-w-xl mx-auto">
@@ -151,13 +150,14 @@ export default function Home() {
                 : '📍 Detecting your location…'}
           </p>
 
-          <button
-            onClick={handleCallDoctor}
-            disabled={loading}
-            className="mt-8 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 disabled:cursor-not-allowed text-white font-bold py-4 px-10 rounded-xl transition duration-300 shadow-lg"
-          >
-            {loading ? 'Calling Doctor...' : 'Call a Doctor'}
-          </button>
+          <div className="mt-8 flex items-center justify-center">
+            <EmergencyCrossButton
+              onClick={handleCallDoctor}
+              loading={loading}
+              ariaLabel="Call a Doctor"
+              size="lg"
+            />
+          </div>
 
           {error && <p className="mt-4 text-red-700">{error}</p>}
         </div>
@@ -166,7 +166,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="bg-slate-900 text-white py-10 px-4">
         <div className="max-w-6xl mx-auto text-center">
-          <p>© 2025 MyDoctor.mu. All rights reserved.</p>
+          <p>© {currentYear} One Tap, One Doc. All rights reserved.</p>
         </div>
       </footer>
     </main>

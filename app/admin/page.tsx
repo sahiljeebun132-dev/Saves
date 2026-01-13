@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Doctor, Patient, Appointment } from '../../lib/db'
+import EmergencyCrossButton from '../components/EmergencyCrossButton'
 
 export default function Admin() {
   const router = useRouter()
@@ -104,13 +105,12 @@ export default function Admin() {
               </div>
             </div>
             <div className="flex gap-4">
-              <button
+              <EmergencyCrossButton
                 onClick={handleCallDoctor}
-                disabled={callLoading}
-                className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white font-bold py-2 px-4 rounded-lg transition duration-300 shadow-lg"
-              >
-                {callLoading ? 'Calling...' : '🚨 Call a Doctor'}
-              </button>
+                loading={callLoading}
+                ariaLabel="Call a Doctor"
+                size="sm"
+              />
               <button
                 onClick={handleLogout}
                 className="professional-btn-danger"
@@ -259,16 +259,18 @@ export default function Admin() {
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 className="text-xl font-semibold mb-4">Provide your details</h3>
             <form onSubmit={submitCallForm}>
-              <label className="block text-sm font-medium text-gray-700">Name</label>
+              <label htmlFor="callerName" className="block text-sm font-medium text-gray-700">Name</label>
               <input
+                id="callerName"
                 value={callerName}
                 onChange={(e) => setCallerName(e.target.value)}
                 className="mt-1 mb-3 block w-full rounded-md border-gray-300 shadow-sm"
                 required
               />
 
-              <label className="block text-sm font-medium text-gray-700">Phone (with country code)</label>
+              <label htmlFor="callerPhone" className="block text-sm font-medium text-gray-700">Phone (with country code)</label>
               <input
+                id="callerPhone"
                 value={callerPhone}
                 onChange={(e) => setCallerPhone(e.target.value)}
                 className="mt-1 mb-4 block w-full rounded-md border-gray-300 shadow-sm"
