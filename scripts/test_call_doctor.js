@@ -1,7 +1,7 @@
 // Test script to POST to local /api/call-doctor
 (async () => {
   try {
-    const res = await fetch('http://localhost:3000/api/call-doctor', {
+    const res = await fetch('http://localhost:3001/api/call-doctor', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ lat: -20.078003, lng: 57.61123541244636, name: 'Test User', phone: '+23057808272' })

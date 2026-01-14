@@ -15,7 +15,7 @@ A Next.js web application for online doctor appointment booking.
 First, ensure Node.js is installed. Then install dependencies:
 
 ```bash
-npm install
+npm ci
 ```
 
 Then, run the development server:
@@ -24,7 +24,28 @@ Then, run the development server:
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3001](http://localhost:3001) with your browser to see the result.
+
+Note: this project sets `PORT=3001` in `npm run dev`.
+
+## Restore After a PC Reset (Windows)
+
+This repo is already set up to be portable. After reinstalling Windows + VS Code:
+
+1. Install Node.js (recommended: Node 20 LTS). This repo includes `.nvmrc`.
+2. Clone your repo (or copy your backed-up DoctorDirect folder) onto the new PC.
+3. In VS Code, open the folder and run:
+   ```bash
+   npm ci
+   ```
+4. Create your local secrets file:
+   - Copy `.env.example` to `.env.local`
+   - Fill in the values (Slack/Twilio are optional)
+5. Start the server:
+   - VS Code Task: **Run Development Server** (or run `npm run dev`)
+6. Visit: `http://localhost:3001`
+
+Important: `.env.local` is intentionally NOT committed. Back up your secrets separately (password manager / secure notes).
 
 ## Project Structure
 
@@ -57,7 +78,7 @@ The application integrates with Slack to send notifications for new appointment 
    - Set the Request URL to your deployed app's `/api/slack/webhook` (e.g., `https://yourdomain.com/api/slack/webhook`)
    - Get the Signing Secret from the app settings.
 
-6. Update the `.env` file with your Slack credentials:
+6. Update `.env.local` with your Slack credentials (recommended workflow: copy from `.env.example`):
    ```
    SLACK_BOT_TOKEN=xoxb-your-bot-token
    SLACK_CHANNEL_ID=C1234567890

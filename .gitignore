@@ -29,10 +29,14 @@ yarn-error.log*
 .env.*
 .env*.local
 
+# keep safe templates committed
+!.env.example
+!.env.local.example
+
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
+!next-env.d.ts
 /generated/prisma

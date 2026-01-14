@@ -20,6 +20,9 @@
     "react-leaflet": "^5.0.0",
     "twilio": "^4.19.0"
   },
+  "engines": {
+    "node": ">=18.17.0"
+  },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
