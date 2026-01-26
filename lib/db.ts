@@ -1,3 +1,4 @@
+// (removed stray object literal)
 import fs from 'fs'
 import path from 'path'
 
@@ -5,6 +6,13 @@ import path from 'path'
 const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production'
 
 const dataPath = path.join(process.cwd(), 'data.json')
+
+export interface DoctorCallLog {
+  timestamp: string // ISO
+  patientName?: string
+  patientPhone?: string
+  location?: { lat: number; lng: number }
+}
 
 export interface Doctor {
   id: number
@@ -18,6 +26,7 @@ export interface Doctor {
   availableHours: string
   location: { lat: number; lng: number }
   password: string
+  callLogs?: DoctorCallLog[]
 }
 
 export interface Patient {
@@ -27,6 +36,7 @@ export interface Patient {
   phone: string
   address: string
   password: string
+  favoriteDoctorIds?: number[]
 }
 
 export interface Appointment {
@@ -36,6 +46,24 @@ export interface Appointment {
   date: string
   time: string
   status: 'pending' | 'confirmed' | 'cancelled'
+  report?: string
+}
+export function updateAppointmentReport(appointmentId: number, report: string): Appointment | undefined {
+  if (isProduction) {
+    const appointment = defaultData.appointments.find(a => a.id === appointmentId)
+    if (!appointment) return undefined
+    return { ...appointment, report }
+  }
+
+  const data = readData()
+  const idx = data.appointments.findIndex(a => a.id === appointmentId)
+  if (idx === -1) return undefined
+  data.appointments[idx] = {
+    ...data.appointments[idx],
+    report
+  }
+  writeData(data)
+  return data.appointments[idx]
 }
 
 interface Data {
@@ -59,7 +87,53 @@ const defaultData: Data = {
       availableHours: "9 AM - 5 PM",
       location: { lat: -20.256, lng: 57.406 },
       password: "password123"
-    }
+      ,
+      callLogs: []
+    },
+    {
+      id: 2,
+      name: "Dr. Decoy One",
+      email: "decoy1@example.com",
+      phone: "+23057447701",
+      licenseNumber: "LIC54321",
+      specialty: "General Medicine",
+      experience: 5,
+      clinicAddress: "Rose Hill, Mauritius",
+      availableHours: "8 AM - 4 PM",
+      location: { lat: -20.232, lng: 57.471 },
+      password: "decoypass1"
+      ,
+      callLogs: []
+    },
+    {
+      id: 3,
+      name: "Dr. Decoy Two",
+      email: "decoy2@example.com",
+      phone: "+23057447702",
+      licenseNumber: "LIC67890",
+      specialty: "Pediatrics",
+      experience: 7,
+      clinicAddress: "Curepipe, Mauritius",
+      availableHours: "10 AM - 6 PM",
+      location: { lat: -20.316, lng: 57.516 },
+      password: "decoypass2"
+      ,
+      callLogs: []
+    },
+    {
+      id: 5,
+      name: "Dr. Sahil Jeebun",
+      email: "sahiljeebun132@gmail.com",
+      phone: "+23058307623",
+      licenseNumber: "LIC24681",
+      specialty: "General Medicine",
+      experience: 3,
+      clinicAddress: "Mapou, Mauritius",
+      availableHours: "9 AM - 3 PM",
+      location: { lat: -20.0575, lng: 57.6111 }, // Mapou, North Mauritius
+      password: "12qsawzx",
+      callLogs: []
+    },
   ],
   patients: [
     {
@@ -70,24 +144,21 @@ const defaultData: Data = {
       address: "Port Louis, Mauritius",
       password: "password123"
     },
-    {
-      id: 2,
-      name: "Sarah Johnson",
-      email: "sarah@example.com",
-      phone: "+230 333 4444",
-      address: "Curepipe, Mauritius",
-      password: "password123"
-    },
-    {
-      id: 3,
-      name: "Mike Wilson",
-      email: "mike@example.com",
-      phone: "+230 555 6666",
-      address: "Quatre Bornes, Mauritius",
-      password: "password123"
-    }
   ],
   appointments: []
+}
+
+export function logDoctorCall(doctorId: number, log: DoctorCallLog): void {
+  if (isProduction) {
+    // Not persisted in production
+    return
+  }
+  const data = readData()
+  const idx = data.doctors.findIndex(d => d.id === doctorId)
+  if (idx === -1) return
+  if (!Array.isArray(data.doctors[idx].callLogs)) data.doctors[idx].callLogs = []
+  data.doctors[idx].callLogs.push(log)
+  writeData(data)
 }
 
 function readData(): Data {
@@ -162,17 +233,36 @@ export function addPatient(patient: Omit<Patient, 'id'>): Patient {
   if (isProduction) {
     // In production, simulate adding patient but don't persist
     const newId = Math.max(...defaultData.patients.map(p => p.id), 0) + 1
-    const newPatient = { ...patient, id: newId }
+    const newPatient = { ...patient, id: newId, favoriteDoctorIds: patient.favoriteDoctorIds ?? [] }
     console.log('Production mode: Patient registration simulated (not persisted)')
     return newPatient
   }
 
   const data = readData()
   const newId = Math.max(...data.patients.map(p => p.id), 0) + 1
-  const newPatient = { ...patient, id: newId }
+  const newPatient = { ...patient, id: newId, favoriteDoctorIds: patient.favoriteDoctorIds ?? [] }
   data.patients.push(newPatient)
   writeData(data)
   return newPatient
+}
+
+export function updatePatientFavorites(patientId: number, favoriteDoctorIds: number[]): Patient | undefined {
+  if (isProduction) {
+    const patient = defaultData.patients.find(p => p.id === patientId)
+    if (!patient) return undefined
+    return { ...patient, favoriteDoctorIds }
+  }
+
+  const data = readData()
+  const patientIndex = data.patients.findIndex(p => p.id === patientId)
+  if (patientIndex === -1) return undefined
+
+  data.patients[patientIndex] = {
+    ...data.patients[patientIndex],
+    favoriteDoctorIds
+  }
+  writeData(data)
+  return data.patients[patientIndex]
 }
 
 export function getAppointments(): Appointment[] {

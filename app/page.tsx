@@ -166,7 +166,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="bg-slate-900 text-white py-10 px-4">
         <div className="max-w-6xl mx-auto text-center">
-          <p>© {currentYear} One Tap, One Doc. All rights reserved.</p>
+          <p>© {currentYear} mydoctor.mu. All rights reserved.</p>
         </div>
       </footer>
     </main>

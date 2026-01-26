@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import 'leaflet/dist/leaflet.css'
-import { Doctor } from '../../lib/db'
+import { Doctor, Patient } from '../../lib/db'
 
 // Dynamically import map components to avoid SSR issues
 const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { ssr: false })
@@ -17,6 +17,8 @@ export default function BookAppointment() {
   const [rawDoctors, setRawDoctors] = useState<Doctor[]>([])
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null)
   const [isClient, setIsClient] = useState(false)
+  const [favoriteIds, setFavoriteIds] = useState<number[]>([])
+  const [patientId, setPatientId] = useState<number | null>(null)
 
   function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 6371 // km
@@ -31,6 +33,31 @@ export default function BookAppointment() {
 
   useEffect(() => {
     setIsClient(true)
+    if (typeof window !== 'undefined') {
+      const storedPatient = window.localStorage.getItem('patient')
+      if (storedPatient) {
+        try {
+          const parsedPatient = JSON.parse(storedPatient)
+          if (Number.isFinite(parsedPatient?.id)) {
+            setPatientId(parsedPatient.id)
+          }
+        } catch {
+          setPatientId(null)
+        }
+      }
+
+      const stored = window.localStorage.getItem('favoriteDoctors')
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored)
+          if (Array.isArray(parsed)) {
+            setFavoriteIds(parsed.filter((id) => Number.isFinite(id)))
+          }
+        } catch {
+          setFavoriteIds([])
+        }
+      }
+    }
     // Fix for default markers in react-leaflet - only on client side
     import('leaflet').then((L) => {
       delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -41,6 +68,21 @@ export default function BookAppointment() {
       })
     })
   }, [])
+
+  useEffect(() => {
+    if (!patientId) return
+    fetch('/api/patients')
+      .then(res => res.json())
+      .then((patients: Patient[]) => {
+        const match = Array.isArray(patients) ? patients.find((p) => p.id === patientId) : null
+        if (match?.favoriteDoctorIds) {
+          setFavoriteIds(match.favoriteDoctorIds.filter((id) => Number.isFinite(id)))
+        }
+      })
+      .catch(() => {
+        // keep local favorites on error
+      })
+  }, [patientId])
 
   useEffect(() => {
     // Get user location
@@ -87,10 +129,77 @@ export default function BookAppointment() {
     setDoctors(doctorsWithDistance)
   }, [rawDoctors, userLocation])
 
+  const toggleFavorite = (doctorId: number) => {
+    setFavoriteIds((prev) => {
+      const next = prev.includes(doctorId)
+        ? prev.filter((id) => id !== doctorId)
+        : [...prev, doctorId]
+
+      if (typeof window !== 'undefined') {
+        if (patientId) {
+          fetch('/api/patients', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ patientId, favoriteDoctorIds: next })
+          }).catch(() => {
+            // keep local favorites on error
+          })
+
+          const storedPatient = window.localStorage.getItem('patient')
+          if (storedPatient) {
+            try {
+              const parsed = JSON.parse(storedPatient)
+              const updated = { ...parsed, favoriteDoctorIds: next }
+              window.localStorage.setItem('patient', JSON.stringify(updated))
+            } catch {
+              // ignore
+            }
+          }
+        } else {
+          window.localStorage.setItem('favoriteDoctors', JSON.stringify(next))
+        }
+      }
+
+      return next
+    })
+  }
+
+  const favoriteDoctors = doctors.filter((doctor) => favoriteIds.includes(doctor.id))
+
   return (
     <main className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8 text-center">Book an Appointment</h1>
       <p className="text-center mb-8">Find the closest doctors and book your appointment.</p>
+
+      {favoriteDoctors.length > 0 && (
+        <div className="mb-10">
+          <h2 className="text-2xl font-semibold mb-4">Your Favorite Doctors</h2>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {favoriteDoctors.map((doctor) => (
+              <div key={doctor.id} className="bg-white shadow-md rounded-lg p-6 border border-yellow-100">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-semibold">{doctor.name}</h3>
+                  <button
+                    type="button"
+                    onClick={() => toggleFavorite(doctor.id)}
+                    className="text-yellow-600 hover:text-yellow-700 text-sm font-medium"
+                  >
+                    ★ Favorited
+                  </button>
+                </div>
+                <p className="text-gray-600 mb-2">{doctor.specialty}</p>
+                <p className="text-sm text-gray-500 mb-4">Distance: {doctor.distance.toFixed(2)} km</p>
+                <Link
+                  href={`/book/${doctor.id}`}
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full text-center block"
+                >
+                  Book Appointment
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="mb-8">
         {isClient && (
@@ -128,7 +237,19 @@ export default function BookAppointment() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {doctors.map((doctor) => (
           <div key={doctor.id} className="bg-white shadow-md rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-2">{doctor.name}</h2>
+            <div className="flex items-start justify-between gap-4">
+              <h2 className="text-xl font-semibold mb-2">{doctor.name}</h2>
+              <button
+                type="button"
+                onClick={() => toggleFavorite(doctor.id)}
+                className={[
+                  'text-sm font-medium',
+                  favoriteIds.includes(doctor.id) ? 'text-yellow-600' : 'text-gray-500 hover:text-gray-700'
+                ].join(' ')}
+              >
+                {favoriteIds.includes(doctor.id) ? '★ Favorite' : '☆ Add Favorite'}
+              </button>
+            </div>
             <p className="text-gray-600 mb-2">{doctor.specialty}</p>
             <p className="text-sm text-gray-500 mb-2">Distance: {doctor.distance.toFixed(2)} km</p>
             <p className="text-sm text-gray-500 mb-4">Estimated wait time: {doctor.estimatedTime}</p>

@@ -27,8 +27,8 @@ export default function LoginDoctor() {
         const user = await response.json()
         localStorage.setItem('doctor', JSON.stringify(user))
         alert('Login successful!')
-        // Redirect to doctor dashboard or home
-        window.location.href = '/'
+        // Redirect to doctor dashboard
+        window.location.href = '/doctor/dashboard'
       } else {
         alert('Invalid credentials')
       }

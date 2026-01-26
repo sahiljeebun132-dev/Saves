@@ -2,16 +2,59 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Doctor, Patient, Appointment } from '../../../lib/db'
+import { Doctor, Patient, Appointment, DoctorCallLog } from '../../../lib/db'
 
 export default function DoctorDashboard() {
   const router = useRouter()
   const [doctor, setDoctor] = useState<Doctor | null>(null)
   const [patients, setPatients] = useState<Patient[]>([])
   const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [reportEdits, setReportEdits] = useState<{ [id: number]: string }>({})
+  const [reportLoading, setReportLoading] = useState<{ [id: number]: boolean }>({})
+  const [callLogs, setCallLogs] = useState<DoctorCallLog[]>([])
+  const [callReports, setCallReports] = useState<{ [idx: number]: string }>({})
+  const [callReportLoading, setCallReportLoading] = useState<{ [idx: number]: boolean }>({})
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+    const onCallReportSubmit = async (idx: number) => {
+      const report = callReports[idx]?.trim()
+      if (!report || !doctor) return
+      setCallReportLoading(prev => ({ ...prev, [idx]: true }))
+      try {
+        const res = await fetch('/api/doctors', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ doctorId: doctor.id, logIndex: idx, report })
+        })
+        if (res.ok) {
+          setCallReportLoading(prev => ({ ...prev, [idx]: false }))
+          setCallReports(edits => {
+            const next = { ...edits }
+            delete next[idx]
+            return next
+          })
+          // Refresh call logs
+          fetch('/api/doctors')
+            .then(res => res.json())
+            .then((allDoctors: Doctor[]) => {
+              const me = allDoctors.find(d => d.id === doctor.id)
+              setCallLogs(me?.callLogs || [])
+            })
+        } else {
+          alert('Failed to save report')
+          setCallReportLoading(prev => ({ ...prev, [idx]: false }))
+        }
+      } catch {
+        alert('Failed to save report')
+        setCallReportLoading(prev => ({ ...prev, [idx]: false }))
+      }
+    }
+
+    const handleCallReportChange = (idx: number, value: string) => {
+      setCallReports(prev => ({ ...prev, [idx]: value }))
+    }
+
+    useEffect(() => {
     const loggedDoctor = localStorage.getItem('doctor')
     if (!loggedDoctor) {
       router.push('/login/doctor')
@@ -26,6 +69,12 @@ export default function DoctorDashboard() {
       .then((allAppointments: Appointment[]) => {
         const doctorAppointments = allAppointments.filter(app => app.doctorId === parsedDoctor.id)
         setAppointments(doctorAppointments)
+        // Initialize report edits for appointments without a report
+        const initialReports: { [id: number]: string } = {}
+        doctorAppointments.forEach(app => {
+          if (!app.report) initialReports[app.id] = ''
+        })
+        setReportEdits(initialReports)
 
         // Get unique patient IDs
         const patientIds = Array.from(new Set(doctorAppointments.map(app => app.patientId)))
@@ -39,10 +88,65 @@ export default function DoctorDashboard() {
             setLoading(false)
           })
       })
-      .catch(error => {
-        console.error('Failed to fetch data:', error)
-        setLoading(false)
+
+    // Fetch call logs for this doctor
+    fetch('/api/doctors')
+      .then(res => res.json())
+      .then((allDoctors: Doctor[]) => {
+        const foundDoctor = allDoctors.find(d => d.id === parsedDoctor.id)
+        setCallLogs(foundDoctor?.callLogs || []);
+
+        // Initialize call reports for logs without a report
+        const initialCallReports: { [idx: number]: string } = {};
+        (foundDoctor?.callLogs || []).forEach((log, idx) => {
+          if (!(log as any).report) {
+            initialCallReports[idx] = '';
+          }
+        });
+        setCallReports(initialCallReports);
       })
+      .catch(error => {
+        console.error('Failed to fetch call logs:', error)
+      })
+
+    const onCallReportSubmit = async (idx: number) => {
+      const report = callReports[idx]?.trim()
+      if (!report || !doctor) return
+      setCallReportLoading(prev => ({ ...prev, [idx]: true }))
+      try {
+        const res = await fetch('/api/doctors', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ doctorId: doctor.id, logIndex: idx, report })
+        })
+        if (res.ok) {
+          setCallReportLoading(prev => ({ ...prev, [idx]: false }))
+          setCallReports(edits => {
+            const next = { ...edits }
+            delete next[idx]
+            return next
+          })
+          // Refresh call logs
+          fetch('/api/doctors')
+            .then(res => res.json())
+            .then((allDoctors: Doctor[]) => {
+              const me = allDoctors.find(d => d.id === doctor.id)
+              setCallLogs(me?.callLogs || [])
+            })
+        } else {
+          alert('Failed to save report')
+          setCallReportLoading(prev => ({ ...prev, [idx]: false }))
+        }
+      } catch {
+        alert('Failed to save report')
+        setCallReportLoading(prev => ({ ...prev, [idx]: false }))
+      }
+    }
+
+    const handleCallReportChange = (idx: number, value: string) => {
+      setCallReports(prev => ({ ...prev, [idx]: value }))
+    }
+    setLoading(false)
   }, [router])
 
   const handleLogout = () => {
@@ -58,8 +162,49 @@ export default function DoctorDashboard() {
     return <div className="container mx-auto px-4 py-8">Access denied</div>
   }
 
+  const handleReportChange = (id: number, value: string) => {
+    setReportEdits(prev => ({ ...prev, [id]: value }))
+  }
+
+  const handleReportSubmit = async (id: number) => {
+    const report = reportEdits[id]?.trim()
+    if (!report) return
+    setReportLoading(prev => ({ ...prev, [id]: true }))
+    try {
+      const res = await fetch('/api/appointments', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appointmentId: id, report })
+      })
+      if (res.ok) {
+        setAppointments(apps => apps.map(a => a.id === id ? { ...a, report } : a))
+        setReportEdits(edits => {
+          const next = { ...edits }
+          delete next[id]
+          return next
+        })
+      } else {
+        alert('Failed to save report')
+      }
+    } catch {
+      alert('Failed to save report')
+    } finally {
+      setReportLoading(prev => ({ ...prev, [id]: false }))
+    }
+  }
+
+  // Check if any call log is missing a report (simulate for now)
+  const missingCallReport = callLogs.some((log, idx) => !((log as any).report || !callReports[idx]))
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Welcome Banner */}
+      <div className="bg-blue-600 text-white py-6 mb-8 shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col items-center">
+          <h1 className="text-4xl font-bold mb-2">Welcome, Dr. {doctor.name}!</h1>
+          <p className="text-lg">This is your dedicated doctor dashboard. Here you can view your call records, manage appointments, and submit mandatory reports for every call.</p>
+        </div>
+      </div>
       {/* Header */}
       <div className="bg-white shadow-lg border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -160,6 +305,74 @@ export default function DoctorDashboard() {
           </div>
         </div>
 
+        {/* Call Log Section */}
+        <div className="professional-card mb-8">
+          <h2 className="text-xl font-semibold mb-4 text-gray-900">Incoming Call Log</h2>
+          {callLogs.length === 0 ? (
+            <div className="text-gray-500">No calls received yet.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="professional-table">
+                <thead>
+                  <tr>
+                    <th>Date/Time</th>
+                    <th>Patient Name</th>
+                    <th>Patient Phone</th>
+                    <th>Location</th>
+                    <th>Report</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {callLogs.slice().reverse().map((log, idx) => (
+                    <tr key={idx}>
+                      <td>{log.timestamp ? new Date(log.timestamp).toLocaleString() : ''}</td>
+                      <td>{log.patientName || '-'}</td>
+                      <td>{log.patientPhone || '-'}</td>
+                      <td>{log.location ? `${log.location.lat.toFixed(4)}, ${log.location.lng.toFixed(4)}` : '-'}</td>
+                      <td>
+                        {(log as any).report ? (
+                          <span className="text-green-700">Submitted</span>
+                        ) : (
+                          <form
+                            onSubmit={e => {
+                              e.preventDefault()
+                              onCallReportSubmit(idx)
+                            }}
+                            className="flex flex-col gap-2"
+                          >
+                            <textarea
+                              required
+                              value={callReports[idx] || ''}
+                              onChange={e => handleCallReportChange(idx, e.target.value)}
+                              className="border border-gray-300 rounded px-2 py-1 text-sm"
+                              placeholder="Enter mandatory report..."
+                              rows={2}
+                            />
+                            <button
+                              type="submit"
+                              className="bg-blue-500 hover:bg-blue-700 text-white text-xs px-3 py-1 rounded"
+                              disabled={callReportLoading[idx]}
+                            >
+                              {callReportLoading[idx] ? 'Saving...' : 'Submit Report'}
+                            </button>
+                          </form>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {missingCallReport && (
+                <div className="mt-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-800 font-semibold text-base rounded shadow">
+                  <span className="block text-lg mb-1">Mandatory Action Required</span>
+                  You must submit a report for <b>every call</b> you receive. <br />
+                  <span className="font-bold">Payroll will not process unless all call reports are completed.</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Appointments Section */}
         <div className="professional-card">
           <h2 className="text-xl font-semibold mb-4 text-gray-900">Your Appointments ({appointments.length})</h2>
@@ -172,6 +385,7 @@ export default function DoctorDashboard() {
                   <th>Date</th>
                   <th>Time</th>
                   <th>Status</th>
+                  <th>Report</th>
                 </tr>
               </thead>
               <tbody>
@@ -190,10 +404,44 @@ export default function DoctorDashboard() {
                         {appointment.status}
                       </span>
                     </td>
+                    <td>
+                      {appointment.report ? (
+                        <span className="text-green-700">Submitted</span>
+                      ) : (
+                        <form
+                          onSubmit={e => {
+                            e.preventDefault()
+                            handleReportSubmit(appointment.id)
+                          }}
+                          className="flex flex-col gap-2"
+                        >
+                          <textarea
+                            required
+                            value={reportEdits[appointment.id] || ''}
+                            onChange={e => handleReportChange(appointment.id, e.target.value)}
+                            className="border border-gray-300 rounded px-2 py-1 text-sm"
+                            placeholder="Enter mandatory report..."
+                            rows={2}
+                          />
+                          <button
+                            type="submit"
+                            className="bg-blue-500 hover:bg-blue-700 text-white text-xs px-3 py-1 rounded"
+                            disabled={reportLoading[appointment.id]}
+                          >
+                            {reportLoading[appointment.id] ? 'Saving...' : 'Submit Report'}
+                          </button>
+                        </form>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            {missingCallReport && (
+              <div className="mt-4 text-red-600 font-semibold text-sm">
+                You must submit a report for every appointment. Payroll will not process without all reports.
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -1,6 +1,33 @@
 {
   "doctors": [
     {
+      "id": 4,
+      "name": "Dr. Sahil Jeebun",
+      "email": "sahiljeebun132@gmail.com",
+      "phone": "+23057447703",
+      "licenseNumber": "LIC24680",
+      "specialty": "General Medicine",
+      "experience": 3,
+      "clinicAddress": "Port Louis, Mauritius",
+      "availableHours": "9 AM - 3 PM",
+      "location": {
+        "lat": -20.16,
+        "lng": 57.501
+      },
+      "password": "12qsawzx",
+      "callLogs": [
+        {
+          "timestamp": "2026-01-26T22:06:30.619Z",
+          "patientName": "Test Patient",
+          "patientPhone": "12345678",
+          "location": {
+            "lat": -20.0575,
+            "lng": 57.6111
+          }
+        }
+      ]
+    },
+    {
       "id": 1,
       "name": "Dr. Mahadoor",
       "email": "mahadoor@example.com",
@@ -10,8 +37,43 @@
       "experience": 10,
       "clinicAddress": "Bambous Village, Mauritius",
       "availableHours": "9 AM - 5 PM",
-      "location": { "lat": -20.256, "lng": 57.406 },
+      "location": {
+        "lat": -20.256,
+        "lng": 57.406
+      },
       "password": "password123"
+    },
+    {
+      "id": 2,
+      "name": "Dr. Decoy One",
+      "email": "decoy1@example.com",
+      "phone": "+23057447701",
+      "licenseNumber": "LIC54321",
+      "specialty": "General Medicine",
+      "experience": 5,
+      "clinicAddress": "Rose Hill, Mauritius",
+      "availableHours": "8 AM - 4 PM",
+      "location": {
+        "lat": -20.232,
+        "lng": 57.471
+      },
+      "password": "decoypass1"
+    },
+    {
+      "id": 3,
+      "name": "Dr. Decoy Two",
+      "email": "decoy2@example.com",
+      "phone": "+23057447702",
+      "licenseNumber": "LIC67890",
+      "specialty": "Pediatrics",
+      "experience": 7,
+      "clinicAddress": "Curepipe, Mauritius",
+      "availableHours": "10 AM - 6 PM",
+      "location": {
+        "lat": -20.316,
+        "lng": 57.516
+      },
+      "password": "decoypass2"
     }
   ],
   "patients": [

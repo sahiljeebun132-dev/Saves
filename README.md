@@ -46,7 +46,6 @@ This repo is already set up to be portable. After reinstalling Windows + VS Code
 6. Visit: `http://localhost:3001`
 
 Important: `.env.local` is intentionally NOT committed. Back up your secrets separately (password manager / secure notes).
-
 ## Backup Checklist (What GitHub Does/Doesn’t Save)
 
 GitHub already backs up all committed project files (code, config, `package-lock.json`, `.vscode/*`, etc.).
@@ -56,6 +55,7 @@ You still need to back up these separately:
 - **Secrets**: the values inside `.env.local` (Slack/Twilio tokens). Do **not** commit `.env.local`.
 - **Optional local data**: if you care about keeping your local registrations/appointments, back up `data.json` too.
    - Note: `data.json` is currently tracked by git in this repo. If you want it to be *purely local*, tell me and I can update `.gitignore`.
+>>>>>>> 74c78df (Update project files before redeploying to Vercel)
 
 ## Project Structure
 

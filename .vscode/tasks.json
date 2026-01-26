@@ -5,6 +5,11 @@
 			"label": "Run Development Server",
 			"type": "shell",
 			"command": "npm run dev"
+		},
+		{
+			"label": "Run Development Server",
+			"type": "shell",
+			"command": "npm run dev"
 		}
 	]
 }

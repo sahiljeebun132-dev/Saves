@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { WebClient } from '@slack/web-api'
-import { getDoctors } from '../../../lib/db'
+import { getDoctors, logDoctorCall } from '../../../lib/db'
 
 const slackToken = process.env.SLACK_BOT_TOKEN
 const slackChannel = process.env.SLACK_CHANNEL_ID
@@ -46,6 +46,16 @@ export async function POST(request: NextRequest) {
 
     // Get top 3 nearest doctors
     const nearestDoctors = doctorsWithDistance.slice(0, 3)
+
+    // Log call to the closest doctor (first in list)
+    if (nearestDoctors.length > 0) {
+      logDoctorCall(nearestDoctors[0].id, {
+        timestamp: new Date().toISOString(),
+        patientName: name,
+        patientPhone: phone,
+        location: { lat, lng }
+      })
+    }
 
     // Send Slack message (if Slack is configured and not in direct-call mode).
     if (!isDirectMode && slackClient && slackChannel) {

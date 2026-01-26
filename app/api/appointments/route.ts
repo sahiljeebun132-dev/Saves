@@ -1,5 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAppointments, addAppointment, getDoctor, getPatient, Appointment } from '@/lib/db'
+import { getAppointments, addAppointment, getDoctor, getPatient, Appointment, updateAppointmentReport } from '@/lib/db'
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const appointmentId = Number(body?.appointmentId)
+    const report = String(body?.report || '').trim()
+    if (!Number.isFinite(appointmentId) || !report) {
+      return NextResponse.json({ error: 'Valid appointmentId and report required' }, { status: 400 })
+    }
+    const updated = updateAppointmentReport(appointmentId, report)
+    if (!updated) {
+      return NextResponse.json({ error: 'Appointment not found' }, { status: 404 })
+    }
+    return NextResponse.json(updated)
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to update report' }, { status: 500 })
+  }
+}
 import { WebClient } from '@slack/web-api'
 
 export async function GET() {
