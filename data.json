@@ -10,9 +10,12 @@
       "experience": 3,
       "clinicAddress": "Port Louis, Mauritius",
       "availableHours": "9 AM - 3 PM",
-      "location": {
         "lat": -20.16,
         "lng": 57.501
+      },
+      "location": {
+        "lat": -20.0575,
+        "lng": 57.6111
       },
       "password": "12qsawzx",
       "callLogs": [

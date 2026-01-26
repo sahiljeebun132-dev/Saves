@@ -96,33 +96,40 @@ export default function Home() {
       }
 
       if (!location) {
-        const telPhone = await getBestAvailableDoctorPhone()
-        if (telPhone) {
-          window.location.href = `tel:${telPhone}`
-          return
-        }
-        setError('Location not available. Please enable location services.')
-        return
+        setError('Location not available. Please enable location services.');
+        return;
       }
 
-      const payload = { ...location, mode: 'direct' }
+      // Optionally, get patient info from localStorage or context
+      let patientName = '';
+      let patientPhone = '';
+      try {
+        const patient = localStorage.getItem('patient');
+        if (patient) {
+          const parsed = JSON.parse(patient);
+          patientName = parsed.name || '';
+          patientPhone = parsed.phone || '';
+        }
+      } catch {}
+
+      const payload = { ...location, mode: 'direct', name: patientName, phone: patientPhone };
       const response = await fetch('/api/call-doctor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-      })
+      });
 
-      if (!response.ok) throw new Error('Failed to call doctors')
-      const data = await response.json()
+      if (!response.ok) throw new Error('Failed to call doctors');
+      const data = await response.json();
 
-      const primary = Array.isArray(data?.doctors) ? data.doctors[0] : null
-      const telPhone = primary?.phone ? normalizePhoneForTel(primary.phone) : ''
+      const primary = Array.isArray(data?.doctors) ? data.doctors[0] : null;
+      const telPhone = primary?.phone ? normalizePhoneForTel(primary.phone) : '';
       if (telPhone) {
-        window.location.href = `tel:${telPhone}`
-        return
+        window.location.href = `tel:${telPhone}`;
+        return;
       }
 
-      setError('No doctor phone number available to call.')
+      setError('No doctor phone number available to call.');
     } catch {
       setError('Failed to connect to a doctor. Please try again.')
     } finally {

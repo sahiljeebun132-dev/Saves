@@ -24,7 +24,7 @@ export default function DoctorDashboard() {
         const res = await fetch('/api/doctors', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ doctorId: doctor.id, logIndex: idx, report })
+          body: JSON.stringify({ doctorId: doctor._id, logIndex: idx, report })
         })
         if (res.ok) {
           setCallReportLoading(prev => ({ ...prev, [idx]: false }))
@@ -36,8 +36,8 @@ export default function DoctorDashboard() {
           // Refresh call logs
           fetch('/api/doctors')
             .then(res => res.json())
-            .then((allDoctors: Doctor[]) => {
-              const me = allDoctors.find(d => d.id === doctor.id)
+            .then((allDoctors) => {
+              const me = allDoctors.find(d => d._id === doctor._id)
               setCallLogs(me?.callLogs || [])
             })
         } else {
@@ -60,54 +60,58 @@ export default function DoctorDashboard() {
       router.push('/login/doctor')
       return
     }
-    const parsedDoctor = JSON.parse(loggedDoctor)
-    setDoctor(parsedDoctor)
+
+    const parsedDoctor = JSON.parse(loggedDoctor);
+    setDoctor(parsedDoctor);
 
     // Fetch appointments for this doctor
     fetch('/api/appointments')
       .then(res => res.json())
-      .then((allAppointments: Appointment[]) => {
-        const doctorAppointments = allAppointments.filter(app => app.doctorId === parsedDoctor.id)
-        setAppointments(doctorAppointments)
+      .then((allAppointments) => {
+        const doctorAppointments = allAppointments.filter(app => {
+          // Support both string and object doctorId
+          return app.doctorId === parsedDoctor._id || (app.doctorId?._id === parsedDoctor._id);
+        });
+        setAppointments(doctorAppointments);
         // Initialize report edits for appointments without a report
-        const initialReports: { [id: number]: string } = {}
+        const initialReports = {};
         doctorAppointments.forEach(app => {
-          if (!app.report) initialReports[app.id] = ''
-        })
-        setReportEdits(initialReports)
+          if (!app.report) initialReports[app._id || app.id] = '';
+        });
+        setReportEdits(initialReports);
 
         // Get unique patient IDs
-        const patientIds = Array.from(new Set(doctorAppointments.map(app => app.patientId)))
+        const patientIds = Array.from(new Set(doctorAppointments.map(app => app.patientId)));
 
         // Fetch patients
         fetch('/api/patients')
           .then(res => res.json())
-          .then((allPatients: Patient[]) => {
-            const doctorPatients = allPatients.filter(p => patientIds.includes(p.id))
-            setPatients(doctorPatients)
-            setLoading(false)
-          })
-      })
+          .then((allPatients) => {
+            const doctorPatients = allPatients.filter(p => patientIds.includes(p._id || p.id));
+            setPatients(doctorPatients);
+            setLoading(false);
+          });
+      });
 
     // Fetch call logs for this doctor
     fetch('/api/doctors')
       .then(res => res.json())
-      .then((allDoctors: Doctor[]) => {
-        const foundDoctor = allDoctors.find(d => d.id === parsedDoctor.id)
+      .then((allDoctors) => {
+        const foundDoctor = allDoctors.find(d => d._id === parsedDoctor._id);
         setCallLogs(foundDoctor?.callLogs || []);
 
         // Initialize call reports for logs without a report
-        const initialCallReports: { [idx: number]: string } = {};
+        const initialCallReports = {};
         (foundDoctor?.callLogs || []).forEach((log, idx) => {
-          if (!(log as any).report) {
+          if (!log.report) {
             initialCallReports[idx] = '';
           }
         });
         setCallReports(initialCallReports);
       })
       .catch(error => {
-        console.error('Failed to fetch call logs:', error)
-      })
+        console.error('Failed to fetch call logs:', error);
+      });
 
     const onCallReportSubmit = async (idx: number) => {
       const report = callReports[idx]?.trim()
@@ -193,8 +197,8 @@ export default function DoctorDashboard() {
     }
   }
 
-  // Check if any call log is missing a report (simulate for now)
-  const missingCallReport = callLogs.some((log, idx) => !((log as any).report || !callReports[idx]))
+  // Check if any call log is missing a report
+  const missingCallReport = callLogs.some((log) => !log.report);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -308,6 +312,13 @@ export default function DoctorDashboard() {
         {/* Call Log Section */}
         <div className="professional-card mb-8">
           <h2 className="text-xl font-semibold mb-4 text-gray-900">Incoming Call Log</h2>
+          {missingCallReport && (
+            <div className="mb-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-800 font-semibold text-base rounded shadow">
+              <span className="block text-lg mb-1">Mandatory Action Required</span>
+              You must submit a report for <b>every call</b> you receive. <br />
+              <span className="font-bold">Payroll will not process unless all call reports are completed.</span>
+            </div>
+          )}
           {callLogs.length === 0 ? (
             <div className="text-gray-500">No calls received yet.</div>
           ) : (
@@ -330,13 +341,13 @@ export default function DoctorDashboard() {
                       <td>{log.patientPhone || '-'}</td>
                       <td>{log.location ? `${log.location.lat.toFixed(4)}, ${log.location.lng.toFixed(4)}` : '-'}</td>
                       <td>
-                        {(log as any).report ? (
+                        {log.report ? (
                           <span className="text-green-700">Submitted</span>
                         ) : (
                           <form
                             onSubmit={e => {
-                              e.preventDefault()
-                              onCallReportSubmit(idx)
+                              e.preventDefault();
+                              onCallReportSubmit(idx);
                             }}
                             className="flex flex-col gap-2"
                           >
@@ -362,13 +373,6 @@ export default function DoctorDashboard() {
                   ))}
                 </tbody>
               </table>
-              {missingCallReport && (
-                <div className="mt-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-800 font-semibold text-base rounded shadow">
-                  <span className="block text-lg mb-1">Mandatory Action Required</span>
-                  You must submit a report for <b>every call</b> you receive. <br />
-                  <span className="font-bold">Payroll will not process unless all call reports are completed.</span>
-                </div>
-              )}
             </div>
           )}
         </div>

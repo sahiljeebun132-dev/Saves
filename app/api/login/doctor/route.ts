@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDoctors } from '@/lib/db'
 
-export async function POST(request: NextRequest) {
+import dbConnect from '@/lib/mongodb';
+import Doctor from '@/lib/models/Doctor';
+
+  await dbConnect();
   try {
-    const { email, password } = await request.json()
-    const doctors = getDoctors()
-    const doctor = doctors.find(d => d.email === email && d.password === password)
+    const { email, password } = await request.json();
+    const doctor = await Doctor.findOne({ email, password });
     if (doctor) {
-      return NextResponse.json(doctor)
+      return NextResponse.json(doctor);
     } else {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to login' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to login' }, { status: 500 });
   }
 }

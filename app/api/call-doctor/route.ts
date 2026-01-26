@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { WebClient } from '@slack/web-api'
-import { getDoctors, logDoctorCall } from '../../../lib/db'
+import dbConnect from '@/lib/mongodb';
+import Doctor from '@/lib/models/Doctor';
 
 const slackToken = process.env.SLACK_BOT_TOKEN
 const slackChannel = process.env.SLACK_CHANNEL_ID
@@ -22,66 +23,93 @@ function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return distance
 }
 
-export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const lat = Number(body?.lat)
-    const lng = Number(body?.lng)
-    const name = body?.name
-    const phone = body?.phone
-    const mode = body?.mode
-    const isDirectMode = mode === 'direct'
+    const db = await dbConnect();
+    if (!db || !db.connection || db.connection.readyState !== 1) {
+      console.error('[CALL-DOCTOR] MongoDB connection failed:', db);
+      return NextResponse.json({ error: 'MongoDB connection failed' }, { status: 500 });
+    }
+    console.log('[CALL-DOCTOR] MongoDB connected');
+    const body = await request.json();
+    const lat = Number(body?.lat);
+    const lng = Number(body?.lng);
+    const name = body?.name;
+    const phone = body?.phone;
+    const mode = body?.mode;
+    const isDirectMode = mode === 'direct';
+    console.log('[CALL-DOCTOR] Incoming call:', { lat, lng, name, phone, mode });
 
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-      return NextResponse.json({ error: 'Valid lat/lng location required' }, { status: 400 })
+      console.error('[CALL-DOCTOR] Invalid lat/lng:', lat, lng);
+      return NextResponse.json({ error: 'Valid lat/lng location required' }, { status: 400 });
     }
 
-    const doctors = getDoctors()
-
+    const doctors = await Doctor.find();
+    console.log('[CALL-DOCTOR] Doctors in DB:', doctors.map(d => ({ _id: d._id, name: d.name, location: d.location })));
     // Calculate distances and sort
     const doctorsWithDistance = doctors.map(doctor => ({
-      ...doctor,
+      ...doctor.toObject(),
       distance: haversineDistance(lat, lng, doctor.location.lat, doctor.location.lng)
-    })).sort((a, b) => a.distance - b.distance)
+    })).sort((a, b) => a.distance - b.distance);
 
     // Get top 3 nearest doctors
-    const nearestDoctors = doctorsWithDistance.slice(0, 3)
+    const nearestDoctors = doctorsWithDistance.slice(0, 3);
+    console.log('[CALL-DOCTOR] Nearest doctors:', nearestDoctors.map(d => ({ _id: d._id, name: d.name, distance: d.distance })));
 
     // Log call to the closest doctor (first in list)
     if (nearestDoctors.length > 0) {
-      logDoctorCall(nearestDoctors[0].id, {
-        timestamp: new Date().toISOString(),
-        patientName: name,
-        patientPhone: phone,
-        location: { lat, lng }
-      })
+      const selectedDoctorId = nearestDoctors[0]._id;
+      console.log('[CALL-DOCTOR] Selected doctor _id:', selectedDoctorId);
+      const doc = await Doctor.findById(selectedDoctorId);
+      if (doc) {
+        doc.callLogs = doc.callLogs || [];
+        const newLog = {
+          timestamp: new Date().toISOString(),
+          patientName: name,
+          patientPhone: phone,
+          location: { lat, lng }
+        };
+        doc.callLogs.push(newLog);
+        const saved = await doc.save();
+        if (!saved) {
+          console.error('[CALL-DOCTOR] Failed to save call log for doctor:', doc._id, doc.name);
+          return NextResponse.json({ error: 'Failed to save call log' }, { status: 500 });
+        }
+        console.log('[CALL-DOCTOR] Saved call log for doctor:', doc._id, doc.name, newLog);
+      } else {
+        console.error('[CALL-DOCTOR] Doctor not found by _id:', selectedDoctorId);
+        return NextResponse.json({ error: 'Doctor not found' }, { status: 404 });
+      }
+    } else {
+      console.error('[CALL-DOCTOR] No nearest doctors found for location:', lat, lng);
+      return NextResponse.json({ error: 'No nearest doctors found' }, { status: 404 });
     }
 
     // Send Slack message (if Slack is configured and not in direct-call mode).
     if (!isDirectMode && slackClient && slackChannel) {
       // Build caller info and map link
-      const callerName = name && String(name).trim() ? String(name).trim() : 'Unknown'
-      const callerPhone = phone && String(phone).trim() ? String(phone).trim() : 'Unknown'
-      const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(String(lat))},${encodeURIComponent(String(lng))}`
+      const callerName = name && String(name).trim() ? String(name).trim() : 'Unknown';
+      const callerPhone = phone && String(phone).trim() ? String(phone).trim() : 'Unknown';
+      const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(String(lat))},${encodeURIComponent(String(lng))}`;
 
-      const messageBody = `🚨 EMERGENCY CALL: Patient needs immediate medical assistance!\n\nName: ${callerName}\nPhone: ${callerPhone}\nLocation: ${lat}, ${lng}\nMap: ${mapsLink}\n\nNearest Doctors:\n${nearestDoctors.map(d => `- ${d.name} (${d.distance.toFixed(2)} km away)`).join('\n')}\n\nPlease respond urgently to this emergency call.`
+      const messageBody = `🚨 EMERGENCY CALL: Patient needs immediate medical assistance!\n\nName: ${callerName}\nPhone: ${callerPhone}\nLocation: ${lat}, ${lng}\nMap: ${mapsLink}\n\nNearest Doctors:\n${nearestDoctors.map(d => `- ${d.name} (${d.distance.toFixed(2)} km away)`).join('\n')}\n\nPlease respond urgently to this emergency call.`;
 
       try {
         await slackClient.chat.postMessage({
           channel: slackChannel,
           text: messageBody
-        })
-        console.log(`Slack message sent to channel ${slackChannel}`)
+        });
+        console.log(`Slack message sent to channel ${slackChannel}`);
       } catch (error: any) {
-        console.error('Failed to send Slack message:', error.message || error)
+        console.error('Failed to send Slack message:', error.message || error);
       }
     } else {
-      console.log('Slack not configured - skipping Slack notifications')
+      console.log('Slack not configured - skipping Slack notifications');
     }
 
-    return NextResponse.json({ doctors: nearestDoctors })
+    return NextResponse.json({ doctors: nearestDoctors });
   } catch (error) {
-    console.error('Error in call-doctor API:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error in call-doctor API:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
