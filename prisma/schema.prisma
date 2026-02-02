@@ -1,0 +1,61 @@
+// Prisma schema for DoctorDirect (PostgreSQL)
+// Update the provider and url as needed
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Doctor {
+  id            String   @id @default(uuid())
+  name          String
+  email         String   @unique
+  phone         String
+  licenseNumber String
+  specialty     String
+  experience    Int
+  clinicAddress String
+  availableHours String
+  locationLat   Float
+  locationLng   Float
+  password      String
+  callLogs      CallLog[]
+}
+
+model Patient {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  phone     String
+  address   String
+  password  String
+  favorites Doctor[] @relation("FavoriteDoctors", references: [id])
+}
+
+model Appointment {
+  id        String   @id @default(uuid())
+  doctor    Doctor   @relation(fields: [doctorId], references: [id])
+  doctorId  String
+  patient   Patient  @relation(fields: [patientId], references: [id])
+  patientId String
+  date      String
+  time      String
+  status    String
+  report    String?
+}
+
+model CallLog {
+  id           String   @id @default(uuid())
+  timestamp    DateTime
+  patientName  String?
+  patientPhone String?
+  locationLat  Float?
+  locationLng  Float?
+  report       String?
+  doctor       Doctor   @relation(fields: [doctorId], references: [id])
+  doctorId     String
+}

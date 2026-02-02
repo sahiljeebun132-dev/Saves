@@ -23,6 +23,7 @@ function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return distance
 }
 
+export async function POST(request: NextRequest) {
   try {
     const db = await dbConnect();
     if (!db || !db.connection || db.connection.readyState !== 1) {

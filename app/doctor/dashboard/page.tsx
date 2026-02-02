@@ -2,15 +2,57 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Doctor, Patient, Appointment, DoctorCallLog } from '../../../lib/db'
+
+type Patient = {
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  password: string;
+  favoriteDoctorIds?: string[];
+};
+
+type Appointment = {
+  _id: string;
+  doctorId: string | { _id: string };
+  patientId: string | { _id: string };
+  date: string;
+  time: string;
+  status: 'pending' | 'confirmed' | 'cancelled';
+  report?: string;
+};
+
+type Doctor = {
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+  licenseNumber: string;
+  specialty: string;
+  experience: number;
+  clinicAddress: string;
+  availableHours: string;
+  location: { lat: number; lng: number };
+  password: string;
+  callLogs: DoctorCallLog[];
+};
+
+type DoctorCallLog = {
+  timestamp: string;
+  patientName?: string;
+  patientPhone?: string;
+  location?: { lat: number; lng: number };
+  report?: string;
+};
 
 export default function DoctorDashboard() {
   const router = useRouter()
   const [doctor, setDoctor] = useState<Doctor | null>(null)
   const [patients, setPatients] = useState<Patient[]>([])
   const [appointments, setAppointments] = useState<Appointment[]>([])
-  const [reportEdits, setReportEdits] = useState<{ [id: number]: string }>({})
-  const [reportLoading, setReportLoading] = useState<{ [id: number]: boolean }>({})
+    const [reportEdits, setReportEdits] = useState<{ [id: string]: string }>({})
+    const [reportLoading, setReportLoading] = useState<{ [id: string]: boolean }>({})
   const [callLogs, setCallLogs] = useState<DoctorCallLog[]>([])
   const [callReports, setCallReports] = useState<{ [idx: number]: string }>({})
   const [callReportLoading, setCallReportLoading] = useState<{ [idx: number]: boolean }>({})
@@ -36,8 +78,8 @@ export default function DoctorDashboard() {
           // Refresh call logs
           fetch('/api/doctors')
             .then(res => res.json())
-            .then((allDoctors) => {
-              const me = allDoctors.find(d => d._id === doctor._id)
+            .then((allDoctors: Doctor[]) => {
+              const me = allDoctors.find((d: Doctor) => d._id === doctor._id)
               setCallLogs(me?.callLogs || [])
             })
         } else {
@@ -67,16 +109,16 @@ export default function DoctorDashboard() {
     // Fetch appointments for this doctor
     fetch('/api/appointments')
       .then(res => res.json())
-      .then((allAppointments) => {
-        const doctorAppointments = allAppointments.filter(app => {
+      .then((allAppointments: Appointment[]) => {
+        const doctorAppointments = allAppointments.filter((app: Appointment) => {
           // Support both string and object doctorId
-          return app.doctorId === parsedDoctor._id || (app.doctorId?._id === parsedDoctor._id);
+          return app.doctorId === parsedDoctor._id || (app.doctorId && typeof app.doctorId === 'object' && (app.doctorId as any)._id === parsedDoctor._id);
         });
         setAppointments(doctorAppointments);
         // Initialize report edits for appointments without a report
-        const initialReports = {};
+        const initialReports: Record<string, string> = {};
         doctorAppointments.forEach(app => {
-          if (!app.report) initialReports[app._id || app.id] = '';
+          if (!app.report) initialReports[(app._id || (app as any).id) as string] = '';
         });
         setReportEdits(initialReports);
 
@@ -86,8 +128,8 @@ export default function DoctorDashboard() {
         // Fetch patients
         fetch('/api/patients')
           .then(res => res.json())
-          .then((allPatients) => {
-            const doctorPatients = allPatients.filter(p => patientIds.includes(p._id || p.id));
+          .then((allPatients: Patient[]) => {
+            const doctorPatients = allPatients.filter((p: Patient) => patientIds.includes((p._id || (p as any).id) as string));
             setPatients(doctorPatients);
             setLoading(false);
           });
@@ -96,12 +138,12 @@ export default function DoctorDashboard() {
     // Fetch call logs for this doctor
     fetch('/api/doctors')
       .then(res => res.json())
-      .then((allDoctors) => {
-        const foundDoctor = allDoctors.find(d => d._id === parsedDoctor._id);
+      .then((allDoctors: Doctor[]) => {
+        const foundDoctor = allDoctors.find((d: Doctor) => d._id === parsedDoctor._id);
         setCallLogs(foundDoctor?.callLogs || []);
 
         // Initialize call reports for logs without a report
-        const initialCallReports = {};
+        const initialCallReports: Record<number, string> = {};
         (foundDoctor?.callLogs || []).forEach((log, idx) => {
           if (!log.report) {
             initialCallReports[idx] = '';
@@ -121,7 +163,7 @@ export default function DoctorDashboard() {
         const res = await fetch('/api/doctors', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ doctorId: doctor.id, logIndex: idx, report })
+          body: JSON.stringify({ doctorId: doctor._id, logIndex: idx, report })
         })
         if (res.ok) {
           setCallReportLoading(prev => ({ ...prev, [idx]: false }))
@@ -134,7 +176,7 @@ export default function DoctorDashboard() {
           fetch('/api/doctors')
             .then(res => res.json())
             .then((allDoctors: Doctor[]) => {
-              const me = allDoctors.find(d => d.id === doctor.id)
+              const me = allDoctors.find((d: Doctor) => d._id === doctor._id)
               setCallLogs(me?.callLogs || [])
             })
         } else {
@@ -166,13 +208,13 @@ export default function DoctorDashboard() {
     return <div className="container mx-auto px-4 py-8">Access denied</div>
   }
 
-  const handleReportChange = (id: number, value: string) => {
+  const handleReportChange = (id: string, value: string) => {
     setReportEdits(prev => ({ ...prev, [id]: value }))
   }
 
-  const handleReportSubmit = async (id: number) => {
+  const handleReportSubmit = async (id: string) => {
     const report = reportEdits[id]?.trim()
-    if (!report) return
+    if (!report) return;
     setReportLoading(prev => ({ ...prev, [id]: true }))
     try {
       const res = await fetch('/api/appointments', {
@@ -181,7 +223,7 @@ export default function DoctorDashboard() {
         body: JSON.stringify({ appointmentId: id, report })
       })
       if (res.ok) {
-        setAppointments(apps => apps.map(a => a.id === id ? { ...a, report } : a))
+        setAppointments(apps => apps.map(a => (a._id === String(id) ? { ...a, report } : a)))
         setReportEdits(edits => {
           const next = { ...edits }
           delete next[id]
@@ -296,8 +338,8 @@ export default function DoctorDashboard() {
               </thead>
               <tbody>
                 {patients.map((patient) => (
-                  <tr key={patient.id}>
-                    <td>{patient.id}</td>
+                  <tr key={patient._id}>
+                    <td>{patient._id}</td>
                     <td>{patient.name}</td>
                     <td>{patient.email}</td>
                     <td>{patient.phone}</td>
@@ -394,9 +436,9 @@ export default function DoctorDashboard() {
               </thead>
               <tbody>
                 {appointments.map((appointment) => (
-                  <tr key={appointment.id}>
-                    <td>{appointment.id}</td>
-                    <td>{appointment.patientId}</td>
+                    <tr key={appointment._id}>
+                      <td>{appointment._id}</td>
+                    <td>{typeof appointment.patientId === 'string' ? appointment.patientId : appointment.patientId?._id}</td>
                     <td>{appointment.date}</td>
                     <td>{appointment.time}</td>
                     <td>
@@ -415,14 +457,14 @@ export default function DoctorDashboard() {
                         <form
                           onSubmit={e => {
                             e.preventDefault()
-                            handleReportSubmit(appointment.id)
+                              handleReportSubmit(appointment._id)
                           }}
                           className="flex flex-col gap-2"
                         >
                           <textarea
                             required
-                            value={reportEdits[appointment.id] || ''}
-                            onChange={e => handleReportChange(appointment.id, e.target.value)}
+                            value={reportEdits[appointment._id] || ''}
+                            onChange={e => handleReportChange(appointment._id, e.target.value)}
                             className="border border-gray-300 rounded px-2 py-1 text-sm"
                             placeholder="Enter mandatory report..."
                             rows={2}
@@ -430,9 +472,9 @@ export default function DoctorDashboard() {
                           <button
                             type="submit"
                             className="bg-blue-500 hover:bg-blue-700 text-white text-xs px-3 py-1 rounded"
-                            disabled={reportLoading[appointment.id]}
+                            disabled={reportLoading[appointment._id]}
                           >
-                            {reportLoading[appointment.id] ? 'Saving...' : 'Submit Report'}
+                             {reportLoading[appointment._id] ? 'Saving...' : 'Submit Report'}
                           </button>
                         </form>
                       )}

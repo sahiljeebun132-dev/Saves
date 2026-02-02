@@ -174,6 +174,11 @@ export default function Home() {
       <footer className="bg-slate-900 text-white py-10 px-4">
         <div className="max-w-6xl mx-auto text-center">
           <p>© {currentYear} mydoctor.mu. All rights reserved.</p>
+          <p className="mt-2 text-sm flex flex-col md:flex-row gap-1 md:gap-4 justify-center items-center">
+            <a href="/privacy" className="underline hover:text-blue-300 transition-colors">Privacy Policy</a>
+            <span className="hidden md:inline">|</span>
+            <a href="/terms" className="underline hover:text-blue-300 transition-colors">Terms &amp; Conditions</a>
+          </p>
         </div>
       </footer>
     </main>
