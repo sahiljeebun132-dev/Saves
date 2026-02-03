@@ -1,36 +1,6 @@
 {
   "doctors": [
     {
-      "id": 4,
-      "name": "Dr. Sahil Jeebun",
-      "email": "sahiljeebun132@gmail.com",
-      "phone": "+23057447703",
-      "licenseNumber": "LIC24680",
-      "specialty": "General Medicine",
-      "experience": 3,
-      "clinicAddress": "Port Louis, Mauritius",
-      "availableHours": "9 AM - 3 PM",
-        "lat": -20.16,
-        "lng": 57.501
-      },
-      "location": {
-        "lat": -20.0575,
-        "lng": 57.6111
-      },
-      "password": "12qsawzx",
-      "callLogs": [
-        {
-          "timestamp": "2026-01-26T22:06:30.619Z",
-          "patientName": "Test Patient",
-          "patientPhone": "12345678",
-          "location": {
-            "lat": -20.0575,
-            "lng": 57.6111
-          }
-        }
-      ]
-    },
-    {
       "id": 1,
       "name": "Dr. Mahadoor",
       "email": "mahadoor@example.com",
@@ -44,7 +14,8 @@
         "lat": -20.256,
         "lng": 57.406
       },
-      "password": "password123"
+      "password": "password123",
+      "callLogs": []
     },
     {
       "id": 2,
@@ -60,7 +31,8 @@
         "lat": -20.232,
         "lng": 57.471
       },
-      "password": "decoypass1"
+      "password": "decoypass1",
+      "callLogs": []
     },
     {
       "id": 3,
@@ -76,7 +48,35 @@
         "lat": -20.316,
         "lng": 57.516
       },
-      "password": "decoypass2"
+      "password": "decoypass2",
+      "callLogs": []
+    },
+    {
+      "id": 5,
+      "name": "Dr. Sahil Jeebun",
+      "email": "sahiljeebun132@gmail.com",
+      "phone": "+23058307623",
+      "licenseNumber": "LIC24681",
+      "specialty": "General Medicine",
+      "experience": 3,
+      "clinicAddress": "Mapou, Mauritius",
+      "availableHours": "9 AM - 3 PM",
+      "location": {
+        "lat": -20.0575,
+        "lng": 57.6111
+      },
+      "password": "12qsawzx",
+      "callLogs": [
+        {
+          "timestamp": "2026-02-03T16:20:56.980Z",
+          "patientName": "Test User",
+          "patientPhone": "+23057808272",
+          "location": {
+            "lat": -20.078003,
+            "lng": 57.61123541244636
+          }
+        }
+      ]
     }
   ],
   "patients": [
@@ -86,22 +86,6 @@
       "email": "john@example.com",
       "phone": "+230 111 2222",
       "address": "Port Louis, Mauritius",
-      "password": "password123"
-    },
-    {
-      "id": 2,
-      "name": "Sarah Johnson",
-      "email": "sarah@example.com",
-      "phone": "+230 333 4444",
-      "address": "Curepipe, Mauritius",
-      "password": "password123"
-    },
-    {
-      "id": 3,
-      "name": "Mike Wilson",
-      "email": "mike@example.com",
-      "phone": "+230 555 6666",
-      "address": "Quatre Bornes, Mauritius",
       "password": "password123"
     }
   ],

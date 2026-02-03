@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { WebClient } from '@slack/web-api'
 import dbConnect from '@/lib/mongodb';
 import Doctor from '@/lib/models/Doctor';
+import { getDoctors, logDoctorCall } from '@/lib/db'
 
 const slackToken = process.env.SLACK_BOT_TOKEN
 const slackChannel = process.env.SLACK_CHANNEL_ID
@@ -23,14 +24,36 @@ function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return distance
 }
 
+function normalizeLocation(doctor: any): { lat: number; lng: number } | null {
+  if (doctor?.location && Number.isFinite(doctor.location.lat) && Number.isFinite(doctor.location.lng)) {
+    return { lat: Number(doctor.location.lat), lng: Number(doctor.location.lng) }
+  }
+
+  if (Number.isFinite(doctor?.lat) && Number.isFinite(doctor?.lng)) {
+    return { lat: Number(doctor.lat), lng: Number(doctor.lng) }
+  }
+
+  return null
+}
+
+function getNearestDoctorsFromList(doctors: any[], lat: number, lng: number) {
+  return doctors
+    .map((doctor) => {
+      const loc = normalizeLocation(doctor)
+      if (!loc) return null
+      return {
+        ...doctor,
+        location: loc,
+        distance: haversineDistance(lat, lng, loc.lat, loc.lng)
+      }
+    })
+    .filter(Boolean)
+    .sort((a, b) => (a as any).distance - (b as any).distance)
+    .slice(0, 3) as any[]
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const db = await dbConnect();
-    if (!db || !db.connection || db.connection.readyState !== 1) {
-      console.error('[CALL-DOCTOR] MongoDB connection failed:', db);
-      return NextResponse.json({ error: 'MongoDB connection failed' }, { status: 500 });
-    }
-    console.log('[CALL-DOCTOR] MongoDB connected');
     const body = await request.json();
     const lat = Number(body?.lat);
     const lng = Number(body?.lng);
@@ -45,16 +68,66 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Valid lat/lng location required' }, { status: 400 });
     }
 
+    const mongoUri = process.env.MONGODB_URI
+
+    if (!mongoUri) {
+      console.warn('[CALL-DOCTOR] MONGODB_URI not set. Falling back to file-based data.');
+      const doctors = getDoctors();
+      const nearestDoctors = getNearestDoctorsFromList(doctors, lat, lng);
+
+      if (nearestDoctors.length > 0) {
+        const selectedDoctor = nearestDoctors[0];
+        logDoctorCall(selectedDoctor.id, {
+          timestamp: new Date().toISOString(),
+          patientName: name,
+          patientPhone: phone,
+          location: { lat, lng }
+        });
+      } else {
+        return NextResponse.json({ error: 'No nearest doctors found' }, { status: 404 });
+      }
+
+      return NextResponse.json({ doctors: nearestDoctors });
+    }
+
+    let db: any = null
+    try {
+      db = await dbConnect();
+    } catch (error) {
+      console.error('[CALL-DOCTOR] MongoDB connection error:', error);
+    }
+
+    if (!db || !db.connection || db.connection.readyState !== 1) {
+      console.warn('[CALL-DOCTOR] MongoDB unavailable. Falling back to file-based data.');
+      const doctors = getDoctors();
+      const nearestDoctors = getNearestDoctorsFromList(doctors, lat, lng);
+
+      if (nearestDoctors.length > 0) {
+        const selectedDoctor = nearestDoctors[0];
+        logDoctorCall(selectedDoctor.id, {
+          timestamp: new Date().toISOString(),
+          patientName: name,
+          patientPhone: phone,
+          location: { lat, lng }
+        });
+      } else {
+        return NextResponse.json({ error: 'No nearest doctors found' }, { status: 404 });
+      }
+
+      return NextResponse.json({ doctors: nearestDoctors });
+    }
+
+    console.log('[CALL-DOCTOR] MongoDB connected');
+
     const doctors = await Doctor.find();
     console.log('[CALL-DOCTOR] Doctors in DB:', doctors.map(d => ({ _id: d._id, name: d.name, location: d.location })));
     // Calculate distances and sort
-    const doctorsWithDistance = doctors.map(doctor => ({
-      ...doctor.toObject(),
-      distance: haversineDistance(lat, lng, doctor.location.lat, doctor.location.lng)
-    })).sort((a, b) => a.distance - b.distance);
-
-    // Get top 3 nearest doctors
-    const nearestDoctors = doctorsWithDistance.slice(0, 3);
+    let nearestDoctors = getNearestDoctorsFromList(doctors.map(d => d.toObject()), lat, lng);
+    if (nearestDoctors.length === 0) {
+      console.warn('[CALL-DOCTOR] No usable Mongo doctors. Falling back to file-based data.');
+      const fallbackDoctors = getDoctors();
+      nearestDoctors = getNearestDoctorsFromList(fallbackDoctors, lat, lng);
+    }
     console.log('[CALL-DOCTOR] Nearest doctors:', nearestDoctors.map(d => ({ _id: d._id, name: d.name, distance: d.distance })));
 
     // Log call to the closest doctor (first in list)

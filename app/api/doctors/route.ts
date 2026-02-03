@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Doctor from '@/lib/models/Doctor';
+import { addDoctor, getDoctors } from '@/lib/db'
 
 // PATCH: Update a doctor's call log report
 export async function PATCH(request: NextRequest) {
+  const mongoUri = process.env.MONGODB_URI
+  if (!mongoUri) {
+    return NextResponse.json({ error: 'Database not configured' }, { status: 503 })
+  }
+
   await dbConnect();
   try {
     const body = await request.json();
@@ -28,9 +34,24 @@ export async function PATCH(request: NextRequest) {
 
 // GET: Fetch all doctors
 export async function GET() {
-  await dbConnect();
+  const mongoUri = process.env.MONGODB_URI
+  if (!mongoUri) {
+    return NextResponse.json(getDoctors())
+  }
+
+  try {
+    const db = await dbConnect();
+    if (!db || !db.connection || db.connection.readyState !== 1) {
+      return NextResponse.json(getDoctors())
+    }
+  } catch {
+    return NextResponse.json(getDoctors())
+  }
   try {
     const doctors = await Doctor.find();
+    if (!doctors || doctors.length === 0) {
+      return NextResponse.json(getDoctors())
+    }
     return NextResponse.json(doctors);
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch doctors' }, { status: 500 });
@@ -39,6 +60,13 @@ export async function GET() {
 
 // POST: Add a new doctor
 export async function POST(request: NextRequest) {
+  const mongoUri = process.env.MONGODB_URI
+  if (!mongoUri) {
+    const body = await request.json();
+    const created = addDoctor(body)
+    return NextResponse.json(created, { status: 201 })
+  }
+
   await dbConnect();
   try {
     const body = await request.json();

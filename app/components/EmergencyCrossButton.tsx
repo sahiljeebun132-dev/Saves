@@ -15,13 +15,15 @@ export default function EmergencyCrossButton({
   size = 'lg',
   ariaLabel = 'Call a Doctor',
   attention = true,
+  href,
 }: {
-  onClick: () => void
+  onClick?: () => void
   loading?: boolean
   disabled?: boolean
   size?: Size
   ariaLabel?: string
   attention?: boolean
+  href?: string
 }) {
   const [ripple, setRipple] = useState<Ripple | null>(null)
 
@@ -36,6 +38,15 @@ export default function EmergencyCrossButton({
 
   const isDisabled = disabled ?? loading
 
+  const className = [
+    'relative inline-flex items-center justify-center rounded-full',
+    'bg-red-600 hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed',
+    'text-white font-extrabold shadow-xl transition duration-200',
+    'focus:outline-none focus:ring-4 focus:ring-red-300',
+    'overflow-hidden select-none',
+    baseSizeClasses,
+  ].join(' ')
+
   return (
     <div className="relative inline-flex">
       {attention && !isDisabled && (
@@ -45,36 +56,61 @@ export default function EmergencyCrossButton({
         </>
       )}
 
-      <button
-        type="button"
-        onClick={onClick}
-        onPointerDown={() => {
-          setRipple({ key: Date.now() })
-        }}
-        disabled={isDisabled}
-        aria-label={ariaLabel}
-        className={[
-          'relative inline-flex items-center justify-center rounded-full',
-          'bg-red-600 hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed',
-          'text-white font-extrabold shadow-xl transition duration-200',
-          'focus:outline-none focus:ring-4 focus:ring-red-300',
-          'overflow-hidden select-none',
-          baseSizeClasses,
-        ].join(' ')}
-      >
-        {ripple && (
-          <span
-            key={ripple.key}
-            className="pointer-events-none absolute inset-0 rounded-full bg-white/35 animate-ping"
-          />
-        )}
+      {href ? (
+        <a
+          href={href}
+          onClick={(event) => {
+            if (isDisabled) {
+              event.preventDefault()
+              return
+            }
+            onClick?.()
+          }}
+          onPointerDown={() => {
+            setRipple({ key: Date.now() })
+          }}
+          aria-label={ariaLabel}
+          className={className}
+          role="button"
+        >
+          {ripple && (
+            <span
+              key={ripple.key}
+              className="pointer-events-none absolute inset-0 rounded-full bg-white/35 animate-ping"
+            />
+          )}
 
-        <span className={['relative leading-none', loading ? 'animate-pulse' : ''].join(' ')}>
-          ✚
-        </span>
+          <span className={['relative leading-none', loading ? 'animate-pulse' : ''].join(' ')}>
+            ✚
+          </span>
 
-        <span className="sr-only">{loading ? 'Calling Doctor…' : ariaLabel}</span>
-      </button>
+          <span className="sr-only">{loading ? 'Calling Doctor…' : ariaLabel}</span>
+        </a>
+      ) : (
+        <button
+          type="button"
+          onClick={onClick}
+          onPointerDown={() => {
+            setRipple({ key: Date.now() })
+          }}
+          disabled={isDisabled}
+          aria-label={ariaLabel}
+          className={className}
+        >
+          {ripple && (
+            <span
+              key={ripple.key}
+              className="pointer-events-none absolute inset-0 rounded-full bg-white/35 animate-ping"
+            />
+          )}
+
+          <span className={['relative leading-none', loading ? 'animate-pulse' : ''].join(' ')}>
+            ✚
+          </span>
+
+          <span className="sr-only">{loading ? 'Calling Doctor…' : ariaLabel}</span>
+        </button>
+      )}
     </div>
   )
 }

@@ -13,11 +13,15 @@ interface Doctor {
 }
 
 export default function Home() {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [loading] = useState(false)
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [locationError, setLocationError] = useState<string | null>(null)
   const [watchId, setWatchId] = useState<number | null>(null)
+  const mahadoorPhone = '+23057447700'
+  const [callTarget] = useState<{ name: string; phone: string } | null>({
+    name: 'Dr. Mahadoor',
+    phone: mahadoorPhone
+  })
 
   const currentYear = new Date().getFullYear()
 
@@ -63,80 +67,6 @@ export default function Home() {
     }
   }, [])
 
-  const handleCallDoctor = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      const getBestAvailableDoctorPhone = async () => {
-        const doctorsRes = await fetch('/api/doctors')
-        if (!doctorsRes.ok) return ''
-        const allDoctors = await doctorsRes.json()
-        const first = Array.isArray(allDoctors) ? allDoctors[0] : null
-        return first?.phone ? normalizePhoneForTel(String(first.phone)) : ''
-      }
-
-      let location = currentLocation
-
-      if (!location && navigator.geolocation) {
-        try {
-          const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-              enableHighAccuracy: true,
-              timeout: 5000,
-              maximumAge: 0,
-            })
-          })
-          location = { lat: pos.coords.latitude, lng: pos.coords.longitude }
-          setCurrentLocation(location)
-          setLocationError(null)
-        } catch {
-          setLocationError('Unable to get your location. Please enable location services.')
-        }
-      }
-
-      if (!location) {
-        setError('Location not available. Please enable location services.');
-        return;
-      }
-
-      // Optionally, get patient info from localStorage or context
-      let patientName = '';
-      let patientPhone = '';
-      try {
-        const patient = localStorage.getItem('patient');
-        if (patient) {
-          const parsed = JSON.parse(patient);
-          patientName = parsed.name || '';
-          patientPhone = parsed.phone || '';
-        }
-      } catch {}
-
-      const payload = { ...location, mode: 'direct', name: patientName, phone: patientPhone };
-      const response = await fetch('/api/call-doctor', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) throw new Error('Failed to call doctors');
-      const data = await response.json();
-
-      const primary = Array.isArray(data?.doctors) ? data.doctors[0] : null;
-      const telPhone = primary?.phone ? normalizePhoneForTel(primary.phone) : '';
-      if (telPhone) {
-        window.location.href = `tel:${telPhone}`;
-        return;
-      }
-
-      setError('No doctor phone number available to call.');
-    } catch {
-      setError('Failed to connect to a doctor. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   return (
     <main className="min-h-screen bg-gradient-to-br from-lime-50 to-yellow-50">
       <section className="min-h-[85vh] flex items-center justify-center px-6">
@@ -159,14 +89,26 @@ export default function Home() {
 
           <div className="mt-8 flex items-center justify-center">
             <EmergencyCrossButton
-              onClick={handleCallDoctor}
               loading={loading}
               ariaLabel="Call a Doctor"
               size="lg"
+              href={`tel:${mahadoorPhone}`}
             />
           </div>
 
-          {error && <p className="mt-4 text-red-700">{error}</p>}
+          {callTarget && (
+            <div className="mt-4 text-emerald-800">
+              <p>Calling {callTarget.name}. If it doesn&apos;t open automatically, tap below:</p>
+              <a
+                href={`tel:${callTarget.phone}`}
+                className="inline-block mt-2 underline text-emerald-700 font-semibold"
+              >
+                {callTarget.phone}
+              </a>
+            </div>
+          )}
+
+          {!callTarget && <p className="mt-4 text-red-700">Unable to place a call.</p>}
         </div>
       </section>
 
