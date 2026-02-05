@@ -22,6 +22,7 @@ export default function Home() {
     name: 'Dr. Mahadoor',
     phone: mahadoorPhone
   })
+  const [showConsent, setShowConsent] = useState(false)
 
   const currentYear = new Date().getFullYear()
 
@@ -36,6 +37,13 @@ export default function Home() {
   }
 
   useEffect(() => {
+    try {
+      const accepted = window.localStorage.getItem('termsAccepted') === 'true'
+      setShowConsent(!accepted)
+    } catch {
+      setShowConsent(true)
+    }
+
     if (!navigator.geolocation) {
       setLocationError('Geolocation is not supported by this browser.')
       return
@@ -66,6 +74,15 @@ export default function Home() {
       }
     }
   }, [])
+
+  const handleAgree = () => {
+    try {
+      window.localStorage.setItem('termsAccepted', 'true')
+    } catch {
+      // ignore
+    }
+    setShowConsent(false)
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-lime-50 to-yellow-50">
@@ -111,6 +128,30 @@ export default function Home() {
           {!callTarget && <p className="mt-4 text-red-700">Unable to place a call.</p>}
         </div>
       </section>
+
+      {showConsent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6">
+          <div className="w-full max-w-lg rounded-xl bg-white p-6 text-left shadow-2xl">
+            <h2 className="text-2xl font-semibold text-slate-900">Terms &amp; Privacy</h2>
+            <p className="mt-2 text-slate-600">
+              Please review and accept our Terms &amp; Conditions and Privacy Policy to continue.
+            </p>
+            <div className="mt-4 flex flex-col gap-2">
+              <a href="/terms" className="underline text-blue-600">View Terms &amp; Conditions</a>
+              <a href="/privacy" className="underline text-blue-600">View Privacy Policy</a>
+            </div>
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={handleAgree}
+                className="rounded-lg bg-emerald-600 px-5 py-2 text-white font-semibold"
+              >
+                I Agree
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="bg-slate-900 text-white py-10 px-4">
